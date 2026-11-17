@@ -15,7 +15,7 @@ import Solid.JSX (JSX, text)
 type Snippets = String -> String
 
 repo :: String
-repo = "https://github.com/aquarazorda/purs-solid"
+repo = "https://github.com/arazorda/purs-solid"
 
 sample :: Snippets -> String -> JSX
 sample snippets name = H.pre { class: "code" } (H.code { innerHTML: snippets name } [])
@@ -151,7 +151,7 @@ guide snippets = case _ of
         [ H.p {} "Install the Solid 2.0 runtime and web renderer. Add Router and Meta when using Solid.Router and Solid.Meta. Add Vite and the Solid plugin when using purs-solid/vite for compiled views or start mode."
         , plain "npm install --save-exact solid-js@2.0.0 @solidjs/web@2.0.0\nnpm install --save-exact @solidjs/router@2.0.0 @solidjs/meta@2.0.0\nnpm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0 vite@8.3.8"
         , H.p {} "Add the package to your Spago workspace from Git, pinned to a commit:"
-        , plain "workspace:\n  extraPackages:\n    purs-solid:\n      git: https://github.com/aquarazorda/purs-solid.git\n      ref: <commit>"
+        , plain ("workspace:\n  extraPackages:\n    purs-solid:\n      git: " <> repo <> ".git\n      ref: <commit>")
         , H.p {} [ text "Bundle development builds with the ", c "development", text " export condition to get Solid's diagnostics." ]
         ]
     }

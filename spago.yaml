@@ -5,7 +5,7 @@ package:
     version: 0.1.0
     license: ISC
     location:
-      githubOwner: aquarazorda
+      githubOwner: arazorda
       githubRepo: purs-solid
   dependencies:
     - aff
