@@ -17,6 +17,9 @@ type Snippets = String -> String
 repo :: String
 repo = "https://github.com/arazorda/purs-solid"
 
+pursuit :: String
+pursuit = "https://pursuit.purescript.org/packages/purescript-purs-solid/0.1.0"
+
 sample :: Snippets -> String -> JSX
 sample snippets name = H.pre { class: "code" } (H.code { innerHTML: snippets name } [])
 
@@ -31,18 +34,18 @@ header root = H.header { class: "top" }
   [ H.a { class: "brand", href: root <> "./" } [ H.span { class: "mark" } "λ", text "purs-solid" ]
   , H.nav {}
       [ H.a { href: root <> "docs/" } "Docs"
-      , H.a { href: root <> "api/index.html" } "API"
+      , H.a { href: pursuit } "API"
       , H.a { href: repo } "GitHub"
       ]
   ]
 
-footer :: String -> JSX
-footer root = H.footer { class: "bottom" }
+footer :: JSX
+footer = H.footer { class: "bottom" }
   [ H.p {}
       [ text "purs-solid · ISC license · "
       , H.a { href: repo } "GitHub"
       , text " · "
-      , H.a { href: root <> "api/index.html" } "API reference"
+      , H.a { href: pursuit } "API reference on Pursuit"
       ]
   ]
 
@@ -78,7 +81,7 @@ landing snippets demo = H.div { class: "page" }
           , H.a { class: "button primary", href: "docs/" } "Get started"
           ]
       ]
-  , footer ""
+  , footer
   ]
 
 type Feature = { title :: String, body :: String, snippet :: String }
@@ -124,7 +127,7 @@ docs snippets contents = H.div { class: "page" }
       [ H.nav { id: "toc", class: "toc", "aria-label": "Contents", innerHTML: contents } []
       , H.main {} (concatMap section sections)
       ]
-  , footer "../"
+  , footer
   ]
   where
   section current =
@@ -139,7 +142,7 @@ docs snippets contents = H.div { class: "page" }
   api [] = []
   api modules =
     [ H.p { class: "api" } $ [ text "API: " ] <> concatMap
-        (\name -> [ H.a { href: "../api/" <> name <> ".html" } (c name), text " " ])
+        (\name -> [ H.a { href: pursuit <> "/docs/" <> name } (c name), text " " ])
         modules
     ]
 
@@ -148,10 +151,12 @@ guide snippets = case _ of
   Install ->
     { modules: []
     , content:
-        [ H.p {} "Install the Solid 2.0 runtime and web renderer. Add Router and Meta when using Solid.Router and Solid.Meta. Add Vite and the Solid plugin when using purs-solid/vite for compiled views or start mode."
-        , plain "npm install --save-exact solid-js@2.0.0 @solidjs/web@2.0.0\nnpm install --save-exact @solidjs/router@2.0.0 @solidjs/meta@2.0.0\nnpm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0 vite@8.3.8"
-        , H.p {} "Add the package to your Spago workspace from Git, pinned to a commit:"
-        , plain ("workspace:\n  extraPackages:\n    purs-solid:\n      git: " <> repo <> ".git\n      ref: <commit>")
+        [ plain "spago install purs-solid"
+        , H.p {} [ text "For a package set that predates the release, add ", c "purs-solid: 0.1.0", text " under ", c "workspace.extraPackages", text " in ", c "spago.yaml", text ", then run the same command." ]
+        , H.p {} "Install the Solid 2.0 runtime and web renderer. Add Router and Meta when using Solid.Router and Solid.Meta."
+        , plain "npm install --save-exact solid-js@2.0.0 @solidjs/web@2.0.0\nnpm install --save-exact @solidjs/router@2.0.0 @solidjs/meta@2.0.0"
+        , H.p {} "For compiled views or start mode, install Vite, the Solid plugin, and the Git-hosted purs-solid/vite wrapper."
+        , plain ("npm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0 vite@8.3.8\nnpm install --save-dev \"git+" <> repo <> ".git#v0.1.0\"")
         , H.p {} [ text "Bundle development builds with the ", c "development", text " export condition to get Solid's diagnostics." ]
         ]
     }

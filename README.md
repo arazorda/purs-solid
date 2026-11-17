@@ -4,7 +4,7 @@ PureScript bindings for [Solid 2.0](https://github.com/solidjs/solid): fine-grai
 
 The bindings use Solid's public API only; what they add is types that reject incorrect code. For example, a signal can't be written during setup, a derived value can't perform effects, a prop only type-checks on elements that have it, and a route's params come from its path. See [docs/design.md](docs/design.md).
 
-Guide and API reference: [purs-solid.vercel.app](https://purs-solid.vercel.app).
+[Guide](https://purs-solid.vercel.app/docs/) · [API reference on Pursuit](https://pursuit.purescript.org/packages/purescript-purs-solid/0.1.0)
 
 ## Example
 
@@ -62,21 +62,32 @@ main = mount (Component.element counter {})
 
 ## Installing
 
-Install the Solid 2.0 runtime and web renderer:
+```bash
+spago install purs-solid
+```
+
+For a package set that predates the release, add `purs-solid: 0.1.0` under `workspace.extraPackages` in `spago.yaml`, then run the same command.
+
+Install the Solid 2.0 runtime and web renderer.
 
 ```bash
 npm install --save-exact solid-js@2.0.0 @solidjs/web@2.0.0
 ```
 
+Install Router and Meta when using `Solid.Router` and `Solid.Meta`.
+
 ```bash
 npm install --save-exact @solidjs/router@2.0.0 @solidjs/meta@2.0.0
 ```
 
+For compiled views or start mode, install Vite, the Solid plugin, and the Git-hosted `purs-solid/vite` wrapper.
+
 ```bash
 npm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0 vite@8.3.8
+npm install --save-dev "git+https://github.com/arazorda/purs-solid.git#v0.1.0"
 ```
 
-Install the router and meta packages when using `Solid.Router` and `Solid.Meta`. Install Vite and the Solid plugin when using `purs-solid/vite` for compiled views or start mode. Bundle development builds with the `development` export condition to get Solid's diagnostics.
+Bundle development builds with the `development` export condition to get Solid's diagnostics.
 
 ## Start mode
 
