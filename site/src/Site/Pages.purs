@@ -77,7 +77,7 @@ landing snippets demo = H.div { class: "page" }
       , H.section { class: "closing" }
           [ H.h2 {} "Solid underneath"
           , H.p {}
-              "Through the Vite plugin, views go through Solid's own compiler, into the same templates as Solid JSX, and render about as fast. Elsewhere purs-solid clones templates at runtime: updates cost the same, and creating DOM is about 1.35× slower."
+              "The Vite wrapper compiles eligible views into the same templates as Solid JSX. The runtime renderer clones templates and applies props when it creates the view."
           , H.a { class: "button primary", href: "docs/" } "Get started"
           ]
       ]
@@ -153,10 +153,13 @@ guide snippets = case _ of
     , content:
         [ plain "spago install purs-solid"
         , H.p {} [ text "For a package set that predates the release, add ", c "purs-solid: 0.1.0", text " under ", c "workspace.extraPackages", text " in ", c "spago.yaml", text ", then run the same command." ]
-        , H.p {} "Install the Solid 2.0 runtime and web renderer. Add Router and Meta when using Solid.Router and Solid.Meta."
-        , plain "npm install --save-exact solid-js@2.0.0 @solidjs/web@2.0.0\nnpm install --save-exact @solidjs/router@2.0.0 @solidjs/meta@2.0.0"
-        , H.p {} "For compiled views or start mode, install Vite, the Solid plugin, and the Git-hosted purs-solid/vite wrapper."
-        , plain ("npm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0 vite@8.3.8\nnpm install --save-dev \"git+" <> repo <> ".git#v0.1.0\"")
+        , H.p {} "Use Node.js 22.12 or later. Install the Solid 2 runtime and web renderer."
+        , plain "npm install solid-js@2 @solidjs/web@2"
+        , H.p {} [ text "Install Router and Meta when using ", c "Solid.Router", text " and ", c "Solid.Meta", text "." ]
+        , plain "npm install @solidjs/router@2 @solidjs/meta@2"
+        , H.p {} [ text "For compiled views or start mode, install the Git-hosted ", c "purs-solid/vite", text " wrapper with the Vite and Solid plugin versions required by its ", c "v0.1.0", text " tag." ]
+        , plain ("npm install --save-dev @solidjs/vite-plugin@3.0.0 vite@8.3.8 \"git+" <> repo <> ".git#v0.1.0\"")
+        , H.p {} [ text "Commit ", c "package-lock.json", text " and use ", c "npm ci", text " for repeatable installs." ]
         , H.p {} [ text "Bundle development builds with the ", c "development", text " export condition to get Solid's diagnostics." ]
         ]
     }
@@ -174,10 +177,10 @@ guide snippets = case _ of
             , H.li {} [ c "style", text ": CSS text, or a record of properties." ]
             , H.li {} [ c "bindValue", text " / ", c "bindChecked", text ": bind a field's value or a checkbox to a signal both ways." ]
             , H.li {} [ c "role", text " and the ", c "aria-*", text " attributes, typed by WAI-ARIA 1.2 (", c "Solid.DOM.Aria", text ")." ]
-            , H.li {} [ c "data-*", text " attributes, ", c "on:name", text " for any event, and ", c "innerHTML", text " / ", c "textContent", text "." ]
+            , H.li {} [ c "data-*", text " attributes, case-sensitive ", c "on:name", text " listeners, and ", c "innerHTML", text " or ", c "textContent", text "." ]
             ]
         , sample snippets "fields"
-        , H.p {} [ text "SVG elements live in ", c "Solid.DOM.SVG", text ". For custom elements, ", c "element", text " takes any tag and unchecked fields: functions are handlers, everything else is an attribute." ]
+        , H.p {} [ text "SVG elements live in ", c "Solid.DOM.SVG", text ". Use ", c "element", text " for a custom tag. Name handlers like ", c "onClick", text " or ", c "on:customEvent", text ". Attribute names are passed through as written." ]
         , sample snippets "svg"
         , sample snippets "untyped"
         ]
@@ -185,15 +188,15 @@ guide snippets = case _ of
   Reactivity ->
     { modules: [ "Solid.Signal", "Solid.Reactivity", "Solid.Setup", "Solid.Lifecycle", "Solid.Context" ]
     , content:
-        [ H.p {} [ text "Component bodies run in ", c "Setup", text ": they create signals, memos and effects, but can't read or write signals directly. ", c "get", text ", ", c "set", text " and ", c "modify", text " run in ", c "Effect", text ", in handlers and in an effect's apply step. Derived values are ", c "Accessor", text "s, a lawful monad with no effects." ]
+        [ H.p {} [ text "Component bodies create signals, memos and effects in ", c "Setup", text ". Use ", c "sample", text " for a one-time read in setup and pass an ", c "Accessor", text " for values that should stay reactive. ", c "get", text ", ", c "set", text " and ", c "modify", text " run in ", c "Effect", text ", for example in a handler." ]
         , sample snippets "signals"
-        , H.p {} [ text "An effect splits into a tracked compute (an ", c "Accessor", text ") and an untracked apply, which returns its cleanup. Props are plain records; pass reactive values as ", c "Accessor", text " fields. ", c "liftSetup", text " is the escape hatch for running an ", c "Effect", text " in setup." ]
+        , H.p {} [ text "An effect splits into a tracked computation and an untracked apply step that can return a cleanup. Use ", c "liftSetup", text " for setup effects such as creating a ref." ]
         ]
     }
   ControlFlow ->
     { modules: [ "Solid.Control" ]
     , content:
-        [ H.p {} [ text "Views are descriptions: hidden branches are never built. ", c "when", text ", ", c "showMaybe", text " and the list functions reuse DOM as their inputs change. A list of records is keyed by a field, so a rebuilt array doesn't rebuild its rows." ]
+        [ H.p {} [ text "Control flow creates a view when its branch is shown. Use ", c "forEachBy", text " with a stable key such as a record's ID to reuse rows when the array changes." ]
         , sample snippets "control"
         , H.p {} [ c "caseOn", text " switches on a data type and rebuilds a branch only when the key changes, here the constructor." ]
         , sample snippets "case"
@@ -211,31 +214,34 @@ guide snippets = case _ of
     , content:
         [ H.p {} [ c "createAsync", text " runs an ", c "Aff", text " for each value of its input and kills superseded ones. The result is an ", c "Async", text ", which may not have loaded, so it has no ", c "get", text ": render it, derive from it, or await it with ", c "resolve", text ". ", c "loading", text " shows a fallback until it's ready, and ", c "errored", text " catches failures." ]
         , sample snippets "async"
-        , H.p {} [ text "Mutations are ", c "Action", text "s (", c "Solid.Action", text "), and optimistic values exist only inside them." ]
+        , H.p {} [ text "Use ", c "Solid.Action", text " for transactional mutations. Make optimistic writes inside an ", c "Action", text " or a router action's ", c "onSubmit", text " hook." ]
         ]
     }
   Router ->
     { modules: [ "Solid.Router", "Solid.Router.Path", "Solid.Router.Search", "Solid.Router.Query", "Solid.Router.Action" ]
     , content:
-        [ H.p {} [ text "Paths are parsed at compile time: ", c "route @\"/users/:id<int>\"", text " gives its component ", c "{ id :: Int }", text ", and ", c "href", text " builds links from the same pattern. Links are plain anchors that the router intercepts. Search params are typed by a row." ]
+        [ H.p {} [ c "route @\"/users/:id<int>\"", text " gives its component ", c "params :: Accessor { id :: Int }", text ". Build links from the same pattern with ", c "href", text ". The router handles plain anchors and marks exact pathname and query matches with ", c "aria-current=\"page\"", text ". A row type defines the search parameters." ]
         , sample snippets "router"
-        , H.p {} [ c "Solid.Router.Query", text " caches route data, and ", c "Solid.Router.Action", text " runs mutations the router tracks: forms, submissions and revalidation." ]
+        , H.p {} [ c "Solid.Router.Query", text " caches route data. ", c "Solid.Router.Action", text " supports forms, tracked submissions and revalidation. Router 2 deprecates ", c "useAction", text ". For programmatic mutations, invoke a server function with ", c "call", text " or use ", c "Solid.Action", text "." ]
         ]
     }
   Ssr ->
     { modules: [ "Solid.Web", "Solid.Web.SSR", "Solid.Meta", "Solid.Errors" ]
     , content:
-        [ H.p {} [ text "Render on the server with ", c "renderToString", text ", ", c "renderToStringAsync", text " (waits for async data) or ", c "renderToReadableStream", text ", then hydrate the same view on the client. Async values resolved on the server are serialized, so the client doesn't fetch them again. Head tags from ", c "Solid.Meta", text " can be rendered anywhere." ]
+        [ H.p {} [ text "Render on the server with ", c "renderToString", text ", await server data with ", c "renderToStringAsync", text ", or stream with ", c "renderToReadableStream", text ". Hydrate the same view on the client." ]
         , sample snippets "ssr"
+        , H.p {} [ c "createAsync", text " loads in the browser by default. Supply ", c "ssr: serialized", text " or ", c "ssr: withCodec encode decode", text " to ", c "createAsyncWith", text " to send the server-loaded value to hydration. Use ", c "renderToStringWithHead", text " to collect ", c "Solid.Meta", text " tags when assembling the document yourself." ]
         ]
     }
   StartMode ->
-    { modules: [ "Solid.Start.ServerFunction", "Solid.Start.UseServer", "Solid.Start.Response", "Solid.Start.Middleware" ]
+    { modules: [ "Solid.Start.ServerFunction", "Solid.Start.UseServer", "Solid.Start.RequestEvent", "Solid.Start.Response", "Solid.Start.Middleware" ]
     , content:
-        [ H.p {} [ text "A start-mode app is a ", c "Component", text ". Use ", c "purs-solid/vite", text " in place of ", c "@solidjs/vite-plugin", text ": it takes the same options, with ", c "start.app", text " and ", c "start.middleware", text " given as module names. ", text "Views compile with Solid's compiler into the same templates as Solid JSX; element calls it can't read, or every call with ", c "compileViews: false", text ", stay on the runtime path." ]
-        , plain "import solid from \"purs-solid/vite\";\n\nexport default defineConfig({ plugins: [solid({ start: true, ssr: true })] });"
-        , H.p {} [ text "Server functions live in a server module that re-exports ", c "Solid.Start.UseServer", text ". None of its code reaches the browser; every export is a ", c "serverFunction", text ", with ", c "Serializable", text " arguments and results. Call them with ", c "call", text ", ", c "queryServer", text " or ", c "serverAction", text "." ]
+        [ H.p {} [ text "Export an ", c "app", text " component from module ", c "App", text " and run ", c "spago build", text " before starting Vite. The wrapper accepts PureScript module names for ", c "start.app", text " and ", c "start.middleware", text ". A middleware module exports ", c "middleware :: MiddlewareFn", text "." ]
+        , plain "import { defineConfig } from \"vite\";\nimport solid from \"purs-solid/vite\";\n\nexport default defineConfig({ plugins: [solid({ start: true, ssr: true })] });"
+        , H.p {} [ text "The wrapper compiles eligible views to Solid templates. Set ", c "compileViews: false", text " to use the runtime renderer for every view. Set ", c "start.nodeServer", text " to ", c "true", text " to generate a Node server." ]
+        , H.p {} [ text "Re-export ", c "Solid.Start.UseServer", text " from a server module and define its functions with ", c "serverFunction", text ". Use ", c "Serializable", text " arguments and results." ]
         , sample snippets "server-function"
+        , H.p {} [ text "Invoke a server function in ", c "Aff", text " with ", c "call", text ". Use ", c "queryServer", text " for a cached read or ", c "serverAction", text " to wrap a mutation that returns a ", c "Reply", text "." ]
         ]
     }
   Testing ->

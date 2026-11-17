@@ -1,6 +1,6 @@
--- | `Setup` is the monad for code that runs inside a reactive owner. It has no
--- | `MonadEffect`, so writing signals or reading untracked during setup doesn't
--- | compile. `Effect` code enters it through `createRoot` or `runWithOwner`.
+-- | `Setup` is the monad for code that runs inside a reactive owner. Use
+-- | `Solid.Signal.sample` for an initial value and `liftSetup` for external effects.
+-- | `Effect` code enters it through `createRoot` or `runWithOwner`.
 module Solid.Setup
   ( module Exports
   , liftSetup

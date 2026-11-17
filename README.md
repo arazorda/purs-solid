@@ -2,7 +2,7 @@
 
 PureScript bindings for [Solid 2.0](https://github.com/solidjs/solid): fine-grained reactivity, rendering, SSR and hydration, the router, head tags and start mode.
 
-The bindings use Solid's public API only; what they add is types that reject incorrect code. For example, a signal can't be written during setup, a derived value can't perform effects, a prop only type-checks on elements that have it, and a route's params come from its path. See [docs/design.md](docs/design.md).
+The bindings use Solid's public APIs. Components create reactive state in `Setup`, and event handlers write it in `Effect`. The compiler checks props against each element and derives route parameter types from the path. See [design notes](docs/design.md).
 
 [Guide](https://purs-solid.vercel.app/docs/) · [API reference on Pursuit](https://pursuit.purescript.org/packages/purescript-purs-solid/0.1.0)
 
@@ -51,7 +51,7 @@ main = mount (Component.element counter {})
   - `Solid.DOM` (props records: `ref`, `class` toggles, `style`, `bindValue`, typed `aria-*` and `role`, `data-*`, `on:` events), `Solid.DOM.HTML`, `Solid.DOM.SVG`, `Solid.DOM.Aria`. The HTML and SVG modules are generated from `dom-indexed` by `npm run gen:dom`.
 - **Rendering:** `Solid.Web` (`mount`, render, hydrate), `Solid.Web.SSR` (string, async and streamed server rendering), `Solid.Errors` (client and server error hooks, safe errors).
 - **Routing and head tags:**
-  - `Solid.Router` (`route @"/users/:id"` gives the component `{ id :: String }`, `:id<int>` an `Int`);
+  - `Solid.Router` (`route @"/users/:id"` gives the component `params :: Accessor { id :: String }`, and `:id<int>` makes `id` an `Int`);
   - `Solid.Router.Path` (`href`);
   - `Solid.Router.Search` (query params typed by a schema row);
   - `Solid.Router.Query` (cached route data);
@@ -68,52 +68,53 @@ spago install purs-solid
 
 For a package set that predates the release, add `purs-solid: 0.1.0` under `workspace.extraPackages` in `spago.yaml`, then run the same command.
 
-Install the Solid 2.0 runtime and web renderer.
+Use Node.js 22.12 or later. Install the Solid 2 runtime and web renderer.
 
 ```bash
-npm install --save-exact solid-js@2.0.0 @solidjs/web@2.0.0
+npm install solid-js@2 @solidjs/web@2
 ```
 
 Install Router and Meta when using `Solid.Router` and `Solid.Meta`.
 
 ```bash
-npm install --save-exact @solidjs/router@2.0.0 @solidjs/meta@2.0.0
+npm install @solidjs/router@2 @solidjs/meta@2
 ```
 
-For compiled views or start mode, install Vite, the Solid plugin, and the Git-hosted `purs-solid/vite` wrapper.
+For compiled views or start mode, install the Git-hosted `purs-solid/vite` wrapper with the Vite and Solid plugin versions required by its `v0.1.0` tag.
 
 ```bash
-npm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0 vite@8.3.8
-npm install --save-dev "git+https://github.com/arazorda/purs-solid.git#v0.1.0"
+npm install --save-dev @solidjs/vite-plugin@3.0.0 vite@8.3.8 "git+https://github.com/arazorda/purs-solid.git#v0.1.0"
 ```
 
-Bundle development builds with the `development` export condition to get Solid's diagnostics.
+Commit `package-lock.json` and use `npm ci` for repeatable installs. Bundle development builds with the `development` export condition to get Solid's diagnostics.
 
 ## Start mode
 
-A start-mode app is a `Component`. Use `purs-solid/vite` in place of `@solidjs/vite-plugin`. It takes the same options, with `start.app` and `start.middleware` given as module names. `app` defaults to the module `App` exporting `app`, and a middleware module exports `middleware`. Element calls with literal props are compiled by Solid's compiler into the same templates as Solid JSX, on the server and in the browser; anything else stays on the runtime path. `compileViews: false` keeps every element on the runtime path.
+Export an `app` component from the PureScript module `App` and run `spago build` before starting Vite. The wrapper takes Solid's Vite options and accepts PureScript module names for `start.app` and `start.middleware`. A middleware module exports `middleware :: MiddlewareFn`. The wrapper compiles eligible views to Solid templates. Set `compileViews: false` to render every view through the runtime.
 
 ```js
+import { defineConfig } from "vite";
 import solid from "purs-solid/vite";
 
 export default defineConfig({ plugins: [solid({ start: true, ssr: true })] });
 ```
 
-Server functions are written in PureScript in a server module, which re-exports `Solid.Start.UseServer`. None of its code reaches the browser. Every value it exports must be a `serverFunction`, and arguments and results must be `Serializable`:
+Write server functions in a module that re-exports `Solid.Start.UseServer`. The Vite wrapper keeps the implementation on the server. Export functions defined with `serverFunction` and use `Serializable` arguments and results.
 
 ```purescript
-module App.Api (module Solid.Start.UseServer, save) where
+module App.Api (module Solid.Start.UseServer, greet) where
 
+import Prelude
 import Solid.Start.ServerFunction (ServerFunction, serverFunction)
 import Solid.Start.UseServer (useServer)
 
-save :: ServerFunction NewTodo Todo
-save = serverFunction \todo -> Db.insert todo
+greet :: ServerFunction String String
+greet = serverFunction \name -> pure ("Hello, " <> name)
 ```
 
-Call them from anywhere with `call`, `queryServer` or `serverAction`.
+Use `call` to invoke a server function in `Aff`, `queryServer` to turn a read into a cached router query, and `serverAction` to wrap a mutation that returns a `Reply`.
 
-See `examples/src/StartMode/Host` and `examples/src/HackerNews/Host`.
+The example hosts enable `start.nodeServer` to generate a Node server. See [StartMode](examples/src/StartMode/Host) and [HackerNews](examples/src/HackerNews/Host).
 
 ## Examples
 
@@ -138,7 +139,8 @@ PORT=3000 npm run start:example:hackernews
 Requires Node.js 22.12+. PureScript, Spago and purs-tidy are pinned dev dependencies.
 
 ```bash
-npm install
+npm ci
+npx playwright install chromium
 ```
 
 ```bash
@@ -147,7 +149,7 @@ npm run test:all
 
 | Script | What it runs |
 |---|---|
-| `npm test` | client specs (happy-dom) and server specs on Solid's dev build; any Solid diagnostic fails them |
+| `npm test` | client specs (happy-dom) and server specs on Solid's dev build with checks for unexpected warnings and errors |
 | `npm run test:purescript:es` | the same specs compiled with `purs-backend-es` |
 | `npm run test:browser-smoke` | Counter and TodoMVC in Chromium |
 | `npm run test:hydration` | server render in Node, hydration in Chromium |
@@ -159,19 +161,19 @@ npm run test:all
 | `npm run build:site` | the landing page, guide and API reference (`site/`) into `site/dist`; its code samples are compiled regions of `site/src` |
 | `npm run gen:dom` | regenerates `Solid.DOM.HTML`, `Solid.DOM.SVG` and `Solid.Internal.Names` |
 | `npm run format`, `npm run format:check` | purs-tidy over the library, tests, examples and site |
-| `npm run bench`, `npm run bench:reference` | the rows benchmark, and the same app in plain Solid |
+| `npm run bench`, `npm run bench -- --compiled`, `npm run bench:reference` | the rows benchmark with the runtime renderer, compiled views, and plain Solid JSX |
 
 ## Performance
 
-The rows benchmark (keyed, after [js-framework-benchmark](https://github.com/krausest/js-framework-benchmark)): `examples/src/Bench/Rows.purs` against the same app in Solid JSX, `test/bench/reference/rows.jsx`. Medians in headless Chromium, Solid `2.0.0-rc.13`:
+The keyed rows benchmark runs [the PureScript example](examples/src/Bench/Rows.purs) and [its Solid JSX counterpart](test/bench/reference/rows.jsx) on the same workload. These medians are from three runs per variant on an Apple M4 Pro with headless Chromium 145 and Solid 2.0.0.
 
 | Operation | Solid JSX | purs-solid (Vite plugin) | purs-solid, runtime path |
 |---|---|---|---|
-| create 1k rows | 12.0 ms | 12.4 ms | 16.9 ms |
-| replace 1k rows | 13.2 ms | 14.1 ms | 18.1 ms |
-| update every 10th row | 2.8 ms | 3.3 ms | 3.5 ms |
-| swap rows | 1.1 ms | 1.4 ms | 1.3 ms |
-| create 10k rows | 128.8 ms | 126.7 ms | 164.8 ms |
-| bundle (gzip) | 24.2 kB | 34.6 kB | 39.7 kB |
+| create 1k rows | 12.45 ms | 12.60 ms | 17.50 ms |
+| replace 1k rows | 14.00 ms | 14.75 ms | 17.95 ms |
+| update every 10th row | 3.20 ms | 3.40 ms | 3.55 ms |
+| swap rows | 1.05 ms | 1.45 ms | 1.50 ms |
+| create 10k rows | 131.00 ms | 126.10 ms | 173.40 ms |
+| bundle (gzip) | 23.4 kB | 34.2 kB | 40.9 kB |
 
-Through `purs-solid/vite`, views compile to the same templates as Solid JSX. On the runtime path (`compileViews: false`, or builds without the plugin), purs-solid clones templates at runtime: updates cost about the same, and creating DOM is about 1.35x slower.
+The Vite wrapper compiles eligible views into Solid templates. The runtime renderer clones templates as it creates views and took longer to create rows in this benchmark.
