@@ -109,7 +109,8 @@ spec = describe "Solid.Start" do
     replyInfo (redirectWith { status: 303 } "/done" :: Reply Int) `shouldEqual` { status: 303, location: "/done", revalidate: "", value: null }
     let todos = Query.query "todos" (\(_ :: Unit) -> pure [ "a" ])
     replyInfo (reloadWith { revalidate: [ Query.queryKey todos ] } :: Reply Int) `shouldEqual` { status: 200, location: "", revalidate: "todos[", value: null }
-    replyInfo (respondWith { revalidate: [] } 7) `shouldEqual` { status: 0, location: "", revalidate: "", value: notNull 7 }
+    replyInfo (respondWith { status: 201, revalidate: [ Query.queryKey todos ] } 7) `shouldEqual`
+      { status: 201, location: "", revalidate: "todos[", value: notNull 7 }
     replyInfo (reply 7) `shouldEqual` { status: 0, location: "", revalidate: "", value: notNull 7 }
 
   solidIt "the request event exposes cookies, locals and sets cookies" do

@@ -62,21 +62,21 @@ main = mount (Component.element counter {})
 
 ## Installing
 
-Solid 2 is a release candidate, so pin exact versions:
+Install the Solid 2.0 runtime and web renderer:
 
 ```bash
-npm install --save-exact solid-js@2.0.0-rc.13 @solidjs/web@2.0.0-rc.13
+npm install --save-exact solid-js@2.0.0 @solidjs/web@2.0.0
 ```
 
 ```bash
-npm install --save-exact @solidjs/router@2.0.0-next.32 @solidjs/meta@1.0.0-next.2
+npm install --save-exact @solidjs/router@2.0.0 @solidjs/meta@2.0.0
 ```
 
 ```bash
-npm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0-next.47
+npm install --save-dev --save-exact @solidjs/vite-plugin@3.0.0 vite@8.3.8
 ```
 
-The router and meta packages are needed only for `Solid.Router` and `Solid.Meta`, and the Vite plugin only for start mode. Bundle development builds with the `development` export condition to get Solid's diagnostics.
+Install the router and meta packages when using `Solid.Router` and `Solid.Meta`. Install Vite and the Solid plugin when using `purs-solid/vite` for compiled views or start mode. Bundle development builds with the `development` export condition to get Solid's diagnostics.
 
 ## Start mode
 

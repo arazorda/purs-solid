@@ -50,6 +50,8 @@ serverAction fn = serverActionImpl (checked fn)
 foreign import formAction :: forall b. RouterAction FormData b -> String
 
 -- | Runs the action. `Nothing` when it replied with a redirect or a reload.
+-- | Router 2 deprecates programmatic form action calls. Use a form for
+-- | tracked submissions or call a server function or `Solid.Action` directly.
 useAction :: forall a b. RouterAction a b -> Setup (a -> Aff (Maybe b))
 useAction act = Setup do
   run <- useActionImpl act

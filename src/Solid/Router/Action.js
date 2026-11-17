@@ -1,8 +1,8 @@
-import { action, useAction, useSubmissions } from "@solidjs/router";
+import { formAction as createFormAction, useAction, useSubmissions } from "@solidjs/router";
 
-export const routerActionImpl = (name, run) => action((input) => run(input)(), name);
+export const routerActionImpl = (name, run) => createFormAction((input) => run(input)(), name);
 
-export const serverActionImpl = (fn) => action(fn);
+export const serverActionImpl = (fn) => createFormAction(fn);
 
 export const formAction = (act) => act.url;
 

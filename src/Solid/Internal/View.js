@@ -17,7 +17,9 @@ import {
   untrack,
 } from "solid-js";
 import {
+  addEvent,
   assign,
+  claimElement,
   clientOnly as solidClientOnly,
   dynamic,
   insert,
@@ -124,6 +126,10 @@ export const bindingPropImpl = (k, convert, v) =>
 
 export const eventPropImpl = (k, handler) => ({ k, m: EVENT, v: (event) => handler(event)() });
 
+export const listen = (node, name, handler) => {
+  addEvent(node, name, handler, false);
+};
+
 export const refProp = (callback) => ({ k: "ref", m: REF, v: (element) => callback(element)() });
 
 export const propsProp = (props) => ({ k: "", m: PROPS, v: props });
@@ -190,6 +196,9 @@ const propsObject = (namespace, tag, props, children) => {
         Object.defineProperty(object, prop.k, { get: prop.v, enumerable: true });
       }
       else if (prop.m === EVENT && isServer) continue;
+      else if (prop.m === EVENT && prop.k.startsWith("on:")) {
+        (refs ??= []).push((node) => listen(node, prop.k.slice(3), prop.v));
+      }
       else object[prop.k] = prop.v;
     }
   };
@@ -260,7 +269,10 @@ const fill = (node, el) => {
     const props = propsObject(el.ns, el.tag, el.props, noChildren);
     delete props.xmlns;
     if (reactiveProps) spread(node, props, true);
-    else assign(node, props, true);
+    else {
+      assign(node, props, true);
+      if (el.tag === "a" || el.tag === "form") claimElement(node);
+    }
   }
   const children = el.children;
   if (children.length === 0) return;

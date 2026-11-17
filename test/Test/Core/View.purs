@@ -177,10 +177,10 @@ spec = describe "views" do
       expanded <- signal false
       seen <- liftEffect (Ref.new 0)
       mounted <- mount $ H.button
-        { role: "switch", "aria-expanded": expanded.get, "aria-level": 2, "aria-checked": Aria.Mixed, "aria-relevant": Aria.AdditionsText, "on:ping": \_ -> Ref.modify_ (_ + 1) seen }
+        { role: "switch", "aria-expanded": expanded.get, "aria-level": 2, "aria-checked": Aria.Mixed, "aria-relevant": Aria.AdditionsText, "on:rowReady": \_ -> Ref.modify_ (_ + 1) seen }
         "menu"
       button <- expectElement "button" mounted
-      liftEffect (dispatch "ping" button)
+      liftEffect (dispatch "rowReady" button)
       liftEffect (Ref.read seen) >>= shouldEqual 1
       html mounted >>= shouldEqual """<button aria-checked="mixed" aria-expanded="false" aria-level="2" aria-relevant="additions text" role="switch">menu</button>"""
       write expanded true

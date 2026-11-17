@@ -46,7 +46,6 @@ module Solid.Internal.Props
 import Prelude
 
 import Data.Array as Array
-import Data.String as String
 import Data.Symbol (class IsSymbol, reflectSymbol)
 import Data.Tuple.Nested ((/\))
 import Effect (Effect)
@@ -188,11 +187,7 @@ instance prefixedAria :: (IsSymbol label, Row.Cons label type_ rest Aria, ToBind
   prefixed = bindingProp (reflectSymbol (Proxy @label)) ariaValue
 
 instance prefixedEvent :: (IsSymbol label, TypeEquals value (Event -> Effect Unit)) => Prefixed False False True kind label value where
-  prefixed =
-    let
-      name = "on" <> String.drop 3 (reflectSymbol (Proxy @label))
-    in
-      \callback -> eventProp name (to callback)
+  prefixed callback = eventProp (reflectSymbol (Proxy @label)) (to callback)
 
 instance prefixedAttribute :: Attribute kind label value => Prefixed False False False kind label value where
   prefixed = attribute @kind @label

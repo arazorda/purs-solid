@@ -8,7 +8,7 @@ export default defineConfig({
   root: here("."),
   plugins: [
     solid({
-      start: { app: "Examples.StartMode.App", middleware: "Examples.StartMode.Middleware", node: true },
+      start: { app: "Examples.StartMode.App", middleware: "Examples.StartMode.Middleware", nodeServer: true },
       ssr: true,
       compileViews: process.env.PURS_SOLID_COMPILE_VIEWS !== "0",
     }),

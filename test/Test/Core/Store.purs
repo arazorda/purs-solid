@@ -21,7 +21,7 @@ import Solid.Signal as Signal
 import Solid.Store (createStore, focus, key, value)
 import Solid.Store as Store
 import Solid.Utility (mapArray)
-import Test.Solid (html, mount, settle, solidIt, waitForHtml)
+import Test.Solid (mountFirstText, settle, solidIt, waitForHtml)
 import Solid.Component as Component
 import Solid.Control as Control
 import Solid.DOM.HTML as H
@@ -263,8 +263,8 @@ spec = describe "Solid.Store" do
           { people: [] :: Array { name :: String } }
         pure $ Control.loading (text "loading") $
           H.ul {} [ Control.forEach (Store.items (Store.focusKey @"people" store)) \row _ -> pure (H.li {} (value (Store.focusKey @"name" row))) ]
-    mounted <- mount (Component.element list {})
-    html mounted >>= shouldEqual "loading"
+    { mounted, first } <- mountFirstText (Component.element list {})
+    first `shouldEqual` "loading"
     waitForHtml "<ul><li>ada</li><li>lin</li></ul>" mounted
     liftEffect mounted.dispose
 

@@ -40,7 +40,7 @@ In Vite builds (unless `compileViews: false`), `vite/compile.mjs` rewrites eleme
 - Server-side `lazy` finds a module's client chunk (to preload it before hydration) through a `$$moduleUrl` export that Solid's JSX transform adds to JSX modules; the wrapper adds it to compiled modules for the server.
 - `purs` rewrites a burst of output files per build. In dev the wrapper replaces Vite's per-file updates for compiled output with one reload once the burst settles: the server's modules first, then the browser. Otherwise a page can render on half-updated modules or hydrate against the other version.
 - With `renderToStringWithHead`, Solid delivers the title as a script that sets `document.title`, not as a `<title>` tag.
-- Pin exact versions: several of these packages' `latest` npm tags point at old releases.
+- The npm manifest pins the Solid runtime, web renderer, Router, Meta and Vite plugin versions tested together.
 
 ## Not bound
 

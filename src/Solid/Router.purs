@@ -266,8 +266,8 @@ foreign import useMatchImpl
   :: forall params
    . EffectFn1 { pattern :: RoutePattern, just :: forall a. a -> Maybe a, nothing :: forall a. Maybe a } (Accessor (Maybe { | params }))
 
--- | A link's state: `active` when the location is at or under it, `current`
--- | when it's exactly there, `pending` while navigating to it.
+-- | `active` follows the pathname, including descendants. `current` requires
+-- | an exact pathname and query match. `pending` marks the navigation target.
 type LinkState =
   { active :: Accessor Boolean
   , current :: Accessor Boolean

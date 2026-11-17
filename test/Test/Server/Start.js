@@ -1,4 +1,4 @@
-import { createRequestEvent } from "@solidjs/web";
+import { createRequestEvent, isResponseEnvelope } from "@solidjs/web";
 import { provideRequestEvent } from "@solidjs/web/storage";
 
 export const newRequest = (url) => (cookie) => () =>
@@ -12,25 +12,26 @@ export const setHeader = (name) => (value) => (response) => () => {
   response.headers.set(name, value);
 };
 
-export const runMiddleware = (middleware) => (request) => () =>
-  provideRequestEvent(createRequestEvent(request), () =>
-    middleware(request, async (forwarded) => new Response(`ok ${(forwarded ?? request).url}`))
+export const runMiddleware = (middleware) => (request) => () => {
+  const event = createRequestEvent(request);
+  return provideRequestEvent(event, () =>
+    middleware(event, async (...args) => {
+      if (args.length !== 0) throw new Error("Start middleware next() takes no arguments");
+      return new Response(`ok ${event.request.url}`);
+    })
   );
+};
 
 export const responseText = (response) => () => response.text();
 
-// A Reply is a Response (redirect, reload), a ResponseEnvelope, or the plain value.
 export const replyInfo = (value) => {
   if (value instanceof Response) {
     return {
       status: value.status,
       location: value.headers.get("location") ?? "",
       revalidate: value.headers.get("x-revalidate") ?? "",
-      value: null,
+      value: isResponseEnvelope(value) ? value.value : null,
     };
-  }
-  if (value != null && typeof value === "object" && "response" in value && "value" in value) {
-    return { status: 0, location: "", revalidate: value.response?.headers.get("x-revalidate") ?? "", value: value.value };
   }
   return { status: 0, location: "", revalidate: "", value };
 };

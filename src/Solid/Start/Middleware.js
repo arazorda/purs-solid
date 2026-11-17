@@ -1,1 +1,5 @@
-export const middlewareImpl = (handler) => (request, next) => handler(request)((forwarded) => () => next(forwarded))();
+export const middlewareImpl = (handler) => (event, next) =>
+  handler(event)((request) => () => {
+    event.request = request;
+    return next();
+  })();

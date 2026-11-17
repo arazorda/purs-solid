@@ -74,7 +74,7 @@ const steps = [
   ["click +1", (tab) => tab.click("#inc")],
   ["type a name", (tab) => tab.fill("#name", "grace")],
   ["check done", (tab) => tab.click("#done")],
-  ["custom event", (tab) => tab.evaluate(() => document.querySelector("[role=status]").dispatchEvent(new Event("ping")))],
+  ["custom event", (tab) => tab.evaluate(() => document.querySelector("[role=status]").dispatchEvent(new Event("rowReady")))],
   ["click +1 again", (tab) => tab.click("#inc")],
 ];
 

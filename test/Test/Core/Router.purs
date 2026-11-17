@@ -31,6 +31,8 @@ import Test.Solid (Mounted, click, html, mount, query, settle, solidIt, waitForH
 import Test.Spec (Spec, describe)
 import Test.Spec.Assertions (shouldEqual)
 import Effect.Exception (error)
+import Web.DOM.Element (getAttribute, toNode)
+import Web.DOM.Node (textContent)
 
 withRouter :: String -> Array Router.Route -> Aff { mounted :: Mounted, navigate :: Ref.Ref (Maybe Router.Navigate) }
 withRouter url routes = do
@@ -142,7 +144,11 @@ spec = describe "Solid.Router" do
     liftEffect (click link)
     settle
     delay (Milliseconds 5.0)
-    html r.mounted >>= shouldEqual """<main><div><p>user 9 / profile</p><a href="/users/9" data-active="" aria-current="page" id="self">me</a></div></main>"""
+    profile <- query "main p" r.mounted >>= maybe (throwError (error "no user profile")) pure
+    liftEffect (textContent (toNode profile)) >>= shouldEqual "user 9 / profile"
+    self <- query "#self" r.mounted >>= maybe (throwError (error "no active link")) pure
+    liftEffect (getAttribute "data-active" self) >>= shouldEqual (Just "")
+    liftEffect (getAttribute "aria-current" self) >>= shouldEqual (Just "page")
     liftEffect r.mounted.dispose
 
   describe "Solid.Router.Query" do
@@ -272,13 +278,13 @@ spec = describe "Solid.Router" do
               ]
         ]
       let buttons = """<button id="page"></button><button id="tags"></button>"""
-      html r.mounted >>= shouldEqual ("""<main><div>["a","b"]Nothing current""" <> buttons <> """Nothing</div></main>""")
+      html r.mounted >>= shouldEqual ("""<main><div>["a","b"]Nothing""" <> buttons <> """Nothing</div></main>""")
       query "#page" r.mounted >>= traverse_ (liftEffect <<< click)
       waitLoad
-      html r.mounted >>= shouldEqual ("""<main><div>["a","b"]Nothing current""" <> buttons <> """(Just 2)</div></main>""")
+      html r.mounted >>= shouldEqual ("""<main><div>["a","b"]Nothing""" <> buttons <> """(Just 2)</div></main>""")
       query "#tags" r.mounted >>= traverse_ (liftEffect <<< click)
       waitLoad
-      html r.mounted >>= shouldEqual ("""<main><div>["x","y"]Nothing current""" <> buttons <> """Nothing</div></main>""")
+      html r.mounted >>= shouldEqual ("""<main><div>["x","y"]Nothing""" <> buttons <> """Nothing</div></main>""")
       nav <- liftEffect (Ref.read r.navigate)
       liftEffect (traverse_ (\n -> Router.navigateWith { state: fromString "hi" } n "/list") nav)
       waitLoad

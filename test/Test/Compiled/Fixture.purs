@@ -28,6 +28,7 @@ import Effect.Exception (Error, throwException)
 import Solid.Web (hydrateAt, mountAt)
 import Solid.Web.SSR as SSR
 import Web.DOM.Element (setAttribute)
+import Web.HTML.HTMLDivElement as HTMLDivElement
 import Web.HTML.HTMLElement as HTMLElement
 
 fixture :: Component.Component {}
@@ -59,7 +60,8 @@ fixture = Component.component \_ -> do
         , "aria-level": 2
         , "aria-valuenow": 0.5
         , "aria-relevant": Aria.AdditionsText
-        , "on:ping": \_ -> modify_ setCount (_ + 10)
+        , "on:rowReady": \_ -> modify_ setCount (_ + 10)
+        , ref: \el -> setAttribute "data-ref" "yes" (HTMLDivElement.toElement el)
         }
         "aria"
     , S.svg { viewBox: "0 0 10 10", width: "10" } (S.circle { cx: "5", cy: "5", r: "4", fill: label } [])

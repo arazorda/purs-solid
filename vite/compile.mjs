@@ -10,7 +10,7 @@ import { DOMWithState, SVGElements, VoidElements } from "@solidjs/web";
 
 const generate = generateModule.default;
 
-const helpers = ["childValue", "readValue", "fieldValue", "fieldProps", "fieldPart"];
+const helpers = ["childValue", "readValue", "fieldValue", "fieldProps", "fieldPart", "listen"];
 const helper = (name) => t.identifier(`$$${name}`);
 
 // Module names, with purs (`_`) and purs-backend-es (`$d`) escapes undone.
@@ -189,8 +189,6 @@ export const compileViews = ({ attributeName, eventName }) => {
           return attribute(label, null);
         case "prefixedAria":
           return attribute(label, member(lastArgument(prefixed), "ariaValue"));
-        case "prefixedEvent":
-          return { kind: "event", name: "on" + label.slice(3) };
         case "prefixedAttribute": {
           const attr = inner(prefixed);
           if (rootName(attr) !== "attributeTyped") return undefined;
@@ -223,12 +221,12 @@ export const compileViews = ({ attributeName, eventName }) => {
         const owner = rootName(flatten(entry.object));
         if (nameOf(entry) === "classValue" && owner === "classValueRecord") return { kind: "classRecord" };
         if (nameOf(entry) === "styleValue" && owner === "styleValueRecord") return { kind: "styleRecord" };
-        if (nameOf(entry) === "prefixed" && owner === "prefixedEvent") return { kind: "event", name: "on" + label.slice(3) };
       }
       return undefined;
     };
 
     const decode = (label, dict) => {
+      if (label.startsWith("on:")) return { kind: "nativeEvent", name: label.slice(3) };
       const direct = resolve(dict);
       const entry = t.isObjectExpression(direct) && direct.properties.find((p) => nameOf(p.key) === "entry");
       return (entry ? decodeEntry(label, resolve(entry.value)) : decodeInstance(label, dict)) ??
@@ -281,7 +279,11 @@ export const compileViews = ({ attributeName, eventName }) => {
   const container = (expression) => t.jsxExpressionContainer(expression);
   const call = (name, ...args) => t.callExpression(helper(name), args);
   const literalText = (node) => (t.isStringLiteral(node) ? node.value : t.isNumericLiteral(node) ? String(node.value) : undefined);
-  const handler = (value, arg) => t.arrowFunctionExpression([arg], t.callExpression(t.callExpression(value, [arg]), []));
+  const runHandler = (value, arg) => t.callExpression(t.callExpression(value, [arg]), []);
+  const eventHandler = (value) => {
+    const event = t.identifier("$$event");
+    return t.arrowFunctionExpression([event], runHandler(value, event));
+  };
   const isPlainRecord = (node) => t.isObjectExpression(node) && node.properties.every((p) => t.isObjectProperty(p) && !p.computed);
   const record = (node) =>
     t.objectExpression(node.properties.map((p) =>
@@ -294,6 +296,8 @@ export const compileViews = ({ attributeName, eventName }) => {
     const state = (name) => (server ? name : `prop:${name}`);
     if (!isPlainRecord(props)) return undefined;
     const out = [];
+    const refs = [];
+    const el = t.identifier("$$el");
     for (const prop of props.properties) {
       const label = t.isIdentifier(prop.key) ? prop.key.name : t.isStringLiteral(prop.key) ? prop.key.value : undefined;
       const field = info.fields.get(label);
@@ -311,10 +315,13 @@ export const compileViews = ({ attributeName, eventName }) => {
           break;
         }
         case "event":
-          out.push(jsxAttribute(field.name, container(handler(v, t.identifier("e")))));
+          out.push(jsxAttribute(field.name, container(eventHandler(v))));
+          break;
+        case "nativeEvent":
+          if (!server) refs.push(call("listen", el, t.stringLiteral(field.name), eventHandler(v)));
           break;
         case "ref":
-          out.push(jsxAttribute("ref", container(handler(v, t.identifier("el")))));
+          refs.push(runHandler(v, el));
           break;
         case "classRecord":
         case "styleRecord":
@@ -330,6 +337,10 @@ export const compileViews = ({ attributeName, eventName }) => {
         default:
           out.push(t.jsxSpreadAttribute(call("fieldProps", field.entry, v)));
       }
+    }
+    if (refs.length > 0) {
+      const body = refs.length === 1 ? refs[0] : t.blockStatement(refs.map((expression) => t.expressionStatement(expression)));
+      out.push(jsxAttribute("ref", container(t.arrowFunctionExpression([el], body))));
     }
     return out;
   };
